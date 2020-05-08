@@ -4,200 +4,138 @@
 #include <stdlib.h>
 #include <string.h>
 
-void ItoaBasePrint(char base,...);
+int printstr(char* c);
+char ToLower(char a);
+int ItoaBasePrint(char base,...);
 int my_printf(char * restrict str, ...);
+char* ConvertBaseString(long long num,long long basenum,char* basestring, char *conv);
 
-void printstr(char* c) {
+int printstr(char* c) {
     int i=0;
+    if (c==NULL) {
+        return 0;
+    } 
     while (c[i]!=0) {
         char cc=c[i];
         write(1,&cc,1);
         i++;
     }
+    return i;
 }
+
+char ToLower(char a){
+    if (a>='A'&&a<='Z') {
+        a=a+32;
+    }
+    return a;
+}
+
 int my_printf(char *restrict str, ...) {
     va_list argsptr;
-    int i=0;
-    int n;
+    int i=0,ch=0;
     long int ln;
     unsigned int un;
-    char c;
+    char c; char* s;
     va_start(argsptr,str);
-    while(str[i]!='\0') {
+    while(str[i]!='\0') { //no need to buffer because all the printing is done in 1 loop
         if(str[i]=='%'){
             i++;
-            switch (str[i]) {
-                case 'd':
-                    n=va_arg(argsptr,int);
-                    ItoaBasePrint('d',n);
-                    break;
-                case 'D':
-                    n=va_arg(argsptr,int);
-                    ItoaBasePrint('d',n);
-                    break;
-                case 'o':
-                    n=va_arg(argsptr,int);
-                    ItoaBasePrint('o',n);
-                    break;
-                case 'O':
-                    n=va_arg(argsptr,int);
-                    ItoaBasePrint('o',n);
-                    break;
+            char b =ToLower(str[i]);
+            switch (b) {
                 case 'u':
                     un=va_arg(argsptr,unsigned int);
-                    ItoaBasePrint('u',un);
-                    break;
-                case 'U':
-                    un=va_arg(argsptr,unsigned int);
-                    ItoaBasePrint('u',un);
-                    break;
-                case 'x':
-                    n=va_arg(argsptr,int);
-                    ItoaBasePrint('x',n);
-                    break;
-                case 'X':
-                    n=va_arg(argsptr,int);
-                    ItoaBasePrint('x',n);
+                    ch+=ItoaBasePrint('u',un);
                     break;
                 case 'c':
                     c=(char)va_arg(argsptr,int);
                     write(1,&c,1);
-                    break;
-                case 'C':
-                    c=(char)va_arg(argsptr,int);
-                    write(1,&c,1);
+                    ch++;
                     break;
                 case 's':
-                    printstr(va_arg(argsptr,char*));
+                    if ((s=va_arg(argsptr,char*))!=NULL) {
+                        ch+=printstr(s);
+                    }
                     break;
-                case 'S':
-                    printstr(va_arg(argsptr,char*));
+                case 'p':     
+                    ln=(long int)va_arg(argsptr,void*);
+                    if (ln==(long int)NULL) {
+                        printstr("(nil)");
+                        break;
+                    }
+                    printstr("0x");
+                    ch+=2;
+                    ch+=ItoaBasePrint('p',ln);
                     break;
-                case 'p':
-                    printstr("0x");
-                    ln=(long int)va_arg(argsptr,void*);
-                    ItoaBasePrint('p',ln);
-                case 'P':
-                    printstr("0x");
-                    ln=(long int)va_arg(argsptr,void*);
-                    ItoaBasePrint('p',ln);
-                default:
+                case '%':
                     write(1,"%",1);
+                    ch++;
                     continue;
+                default: //illegal calls like %k etc will not be processed as they are not listed in switch cases in support func ItoaBasePrint
+                    ln=va_arg(argsptr,int);
+                    ch+=ItoaBasePrint(b,ln);
+                    break;
             }
             i++;
             continue;
         }
         c=str[i];
         write(1,&c,1);
+        ch++;
         i++;
     }
     va_end(argsptr);
-    return 1;
+    return ch;
 }
 
-void ItoaBasePrint(char base,...) {
-    char *OCTA="01234567";
-    char *DEC="0123456789";
-    char *HEX="0123456789abcdef";
-    int UDEC=10;
+int ItoaBasePrint(char base,...) {
     char *conv;
-    char *basestring;
-    int basenum =10;
     va_list Elem;
     va_start(Elem,base);
-    int num;
-    unsigned int unum;
-    char c;
-    char *str;
-    unsigned long lnum;
+    int ch;
     switch (base) {
         case 'o':
-            basestring = OCTA;
-            basenum =8;
-            num=va_arg(Elem,int);
+            conv=ConvertBaseString(va_arg(Elem,long long), 8, "01234567", conv);
             break;
         case 'x':
-            basestring = HEX;
-            basenum = 16;
-            num=va_arg(Elem,int);
+            conv=ConvertBaseString(va_arg(Elem,long long), 16, "0123456789abcdef", conv);
             break;
         case 'd':
-            basestring = DEC;
-            num=va_arg(Elem,int);
+            conv=ConvertBaseString(va_arg(Elem,long long), 10, "0123456789", conv);
             break;
         case 'u':
-            basestring = DEC;
-            unum=va_arg(Elem,unsigned int);
-            unsigned int buf = unum;
-            int ct =0;
-            while(buf!=0) {
-                ct++;
-                buf=buf/basenum;
-            }
-            buf = unum;
-            int l =ct;
-            conv = (char*)malloc((ct+1)*sizeof(char));
-            while(buf!=0) {
-                ct--;
-                conv[ct]=basestring[buf%basenum];
-                buf=buf/basenum;
-            }
-            conv[l]='\0';
-            printstr(conv);
-            free(conv);
-            va_end(Elem);
-            return;
+            conv=ConvertBaseString(va_arg(Elem,long long), 8, "0123456789", conv);
+            break;
         case 'p':
-            basestring = HEX;
-            long int basenuml=16;
-            lnum=va_arg(Elem,long int);
-            long int bufl = lnum;
-            int ctl =0;
-            while(bufl!=0) {
-                ctl++;
-                bufl=bufl/basenuml;
-            }
-            
-            bufl = lnum;
-            int len =ctl;
-            conv = (char*)malloc((ct+1)*sizeof(char));
-            while(bufl!=0) {
-                ctl--;
-                int r =bufl%basenuml;
-                conv[ctl]=basestring[r];
-                bufl=bufl/basenuml;
-            }
-            conv[len]='\0';
-            printstr(conv);
-            va_end(Elem);
-            free(conv);
-            return;
-           
+            conv=ConvertBaseString(va_arg(Elem,long long), 16, "0123456789abcdef", conv);
+            break;
     }
-    
-    int buf = num;
-    int sign = 1;
+    ch=printstr(conv);
+    va_end(Elem);
+    return ch;
+}
+
+char *ConvertBaseString(long long num,long long basenum,char* basestring, char *conv){
+    long long buf = num;
+    long long sign = 1;
+    int ct = 0, l = 0;
     if (num<0) {
         sign=-1;
-        num=num*-1;
+        conv = (char*)malloc((ct+1)*sizeof(char));
+        conv[0]='-';
+        ct++;
+        num*=-1;
     }
-    int ct =0;
     while(buf!=0) {
         ct++;
         buf=buf/basenum;
     }
     buf = num;
-    int l =ct;
     conv = (char*)malloc((ct+1)*sizeof(char));
+    conv[ct]='\0';
     while(buf!=0) {
         ct--;
         conv[ct]=basestring[buf%basenum];
         buf=buf/basenum;
     }
-    conv[l]='\0';
-    printstr(conv);
-    free(conv);
-    va_end(Elem);
-    return;
+    return conv;
 }
