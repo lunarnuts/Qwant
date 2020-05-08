@@ -14,6 +14,7 @@ void test_5();
 void test_6();
 void test_7();
 void test_8();
+void test_9();
 
 int main()
 {
@@ -26,6 +27,7 @@ int main()
     test_6();
     test_7();
     test_8();
+    test_9();
     return 0;
 }
 void test_0() {
@@ -101,4 +103,12 @@ void test_8() {
   int printf_ret_value = printf("Null char is %c!\n", '\0');
   printf("%s my_printf(%d) == printf(%d) %s\n", my_printf_ret_value != printf_ret_value ? RED : GREEN , my_printf_ret_value, printf_ret_value, NORMAL);
   printf("</#8>\n");
+}
+void test_9() {
+  printf("<#9>\n");
+  int a;
+  int my_printf_ret_value = my_printf("decimal is %d!\n", -2147483648);
+  int printf_ret_value = printf("decimal is %ld!\n", -2147483648);
+  printf("%s my_printf(%d) == printf(%d) %s\n", my_printf_ret_value != printf_ret_value ? RED : GREEN , my_printf_ret_value, printf_ret_value, NORMAL);
+  printf("</#9>\n");
 }

@@ -71,7 +71,7 @@ int my_printf(char *restrict str, ...) {
                     ch++;
                     continue;
                 default: //illegal calls like %k etc will not be processed as they are not listed in switch cases in support func ItoaBasePrint
-                    ln=va_arg(argsptr,int);
+                    ln=va_arg(argsptr,long long);
                     ch+=ItoaBasePrint(b,ln);
                     break;
             }
@@ -116,14 +116,11 @@ int ItoaBasePrint(char base,...) {
 
 char *ConvertBaseString(long long num,long long basenum,char* basestring, char *conv){
     long long buf = num;
-    long long sign = 1;
-    int ct = 0, l = 0;
+    int ct = 0, l = 0, sign;
     if (num<0) {
         sign=-1;
-        conv = (char*)malloc((ct+1)*sizeof(char));
-        conv[0]='-';
         ct++;
-        num*=-1;
+        num*=-1;  
     }
     while(buf!=0) {
         ct++;
@@ -137,5 +134,9 @@ char *ConvertBaseString(long long num,long long basenum,char* basestring, char *
         conv[ct]=basestring[buf%basenum];
         buf=buf/basenum;
     }
+    if (sign<0) {
+        conv[0]='-';
+    }
+    
     return conv;
 }
